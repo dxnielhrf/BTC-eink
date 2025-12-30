@@ -75,7 +75,7 @@ currency                 : BTC-USD
 # Aktivierte Bildschirme oder Geräte
 screens : [
 #    epd2in13v2
-    epd2in12g
+    epd2in13g
 #    epd2in13v3
 #    epd2in13bv3
 #    epd2in7
@@ -86,7 +86,7 @@ screens : [
 
 # Konfiguration pro Bildschirm
 # Dies hat keine Auswirkungen, wenn die Bildschirme oben nicht aktiviert sind
-[epd2in12g]
+[epd2in13g]
 mode : candle
 
 [epd2in13v2]
@@ -178,3 +178,4 @@ Um die LEDs beim Raspberry Pi 3b zu deaktivieren, musst du folgende Schritte bef
     ```
 
 3. Speichern und Neustarten.
+
