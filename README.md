@@ -28,7 +28,7 @@
 2. Erlaube System breaks
    ```
     mkdir -p ~/.config/pip
-echo -e "[global]\nbreak-system-packages = true" >> ~/.config/pip/pip.conf
+    echo -e "[global]\nbreak-system-packages = true" >> ~/.config/pip/pip.conf
     ```
 
 3. Install dependencies
@@ -179,5 +179,6 @@ Um die LEDs beim Raspberry pi 3b zu dekativieren musst du folgende Schritte befo
         dtparam=eth_led1=14
         YAML
        ```
+
 
     3. Abspeichern und Neustarten
