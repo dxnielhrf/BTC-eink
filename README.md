@@ -115,7 +115,7 @@ mode : candle
 
 ### Autostart
 
-Um das Programm beim Hochfahren automatisch zu starten, hast du 2 Optionen:
+Um das Programm beim Hochfahren automatisch zu starten, hast du folgende Option:
 
 1. Verwendung des Systemd-Service-Daemons
     1. Erstelle eine neue Service-Konfigurationsdatei
@@ -178,4 +178,5 @@ Um die LEDs beim Raspberry Pi 3b zu deaktivieren, musst du folgende Schritte bef
     ```
 
 3. Speichern und Neustarten.
+
 
