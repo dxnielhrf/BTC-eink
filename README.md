@@ -5,64 +5,63 @@
 * Raspberry Pi Zero W
 * Raspberry Pi 3b+
 * Raspberry Pi 4
-* Any other modern RPi
+* Jeder andere moderne RPi
 
-### Unterstützte displays
+### Unterstützte Displays
 
-* Waveshare eInk types:
+* Waveshare eInk Typen:
   * epd2in13v2
   * epd2in13g
   * epd2in13v3
   * epd2in13bv3
   * epd2in7
   * epd3in7
-* inkyWhat (Red, Black, White)
-* Virtual (picture)
+* inkyWhat (Rot, Schwarz, Weiß)
+* Virtuell (Bild)
 
 ## Installation
 
-1. Schalte an SPI via `sudo raspi-config`
+1. Aktiviere SPI über `sudo raspi-config`
     ```
     Interfacing Options -> SPI
-   ```
-2. Erlaube System breaks
+    ```
+2. Erlaube Systembrüche
    ```
     mkdir -p ~/.config/pip
     echo -e "[global]\nbreak-system-packages = true" >> ~/.config/pip/pip.conf
     ```
 
-3. Install dependencies
+3. Installiere Abhängigkeiten
     ```
     sudo apt update
     sudo apt-get install python3-pip python3-numpy git
     pip3 install RPi.GPIO spidev pillow
     ```
 
-4. Install drivers for your display (you don't need to install both)
-    1. WEnn du ein Waveshare display hast
+4. Installiere Treiber für dein Display (du musst nicht beide installieren)
+    1. Wenn du ein Waveshare-Display hast
     ```
     git clone https://github.com/waveshare/e-Paper.git ~/e-Paper
     pip3 install ~/e-Paper/RaspberryPi_JetsonNano/python/
     ```
-    2. Wenn du ein Inky wHAT display hast
+    2. Wenn du ein Inky wHAT-Display hast
     ```
     pip3 install inky[rpi]
     ```
-5. Download BTC-eink
+5. Lade BTC-eink herunter
     ```
     git clone https://github.com/dxnielhrf/BTC-eink.git ~/zero-btc-screen
     ```
-6. RLass den Code laufen
+6. Lass den Code laufen
     ```
     python3 ~/zero-btc-screen/main.py
     ```
 
+## Bildschirmkonfiguration
 
-## Screen configuration
+Die Anwendung unterstützt mehrere Arten von e-Ink-Bildschirmen und einen zusätzlichen "Bild"-Bildschirm.
 
-The application supports multiple types of e-ink screens, and an additional "picture" screen.
-
-Die displays können in der condifuration.cfg angepasst werden
+Die Displays können in der configuration.cfg angepasst werden.
 
 ```cfg
 [base]
@@ -70,10 +69,10 @@ console_logs             : false
 #logs_file                : /tmp/zero-btc-screen.log
 dummy_data               : false
 refresh_interval_minutes : 15
-# Price pair from Coinbase e.g. BTC-EUR or ADA-GBP
+# Preis-Paar von Coinbase z.B. BTC-EUR oder ADA-GBP
 currency                 : BTC-USD
 
-# Enabled screens or devices
+# Aktivierte Bildschirme oder Geräte
 screens : [
 #    epd2in13v2
     epd2in12g
@@ -85,8 +84,8 @@ screens : [
 #    inkyWhatRBW
   ]
 
-# Configuration per screen
-# This doesn't make any effect if screens are not enabled above
+# Konfiguration pro Bildschirm
+# Dies hat keine Auswirkungen, wenn die Bildschirme oben nicht aktiviert sind
 [epd2in12g]
 mode : candle
 
@@ -123,7 +122,7 @@ Um das Programm beim Hochfahren automatisch zu starten, hast du 2 Optionen:
        ```
         sudo nano /etc/systemd/system/btc-screen.service
         ```
-    2. Kopiere und füge folgendes in die Service-Konfigurationsdatei ein und passe die Einstellungen an deine Umgebung an
+    2. Kopiere und füge Folgendes in die Service-Konfigurationsdatei ein und passe die Einstellungen an deine Umgebung an
        ```
         [Unit]
         Description=zero-btc-screen
@@ -155,30 +154,27 @@ Um das Programm beim Hochfahren automatisch zu starten, hast du 2 Optionen:
         sudo journalctl -f -u btc-screen.service
        ```
 
-
 ### LEDs
 
-Um die LEDs beim Raspberry pi 3b zu dekativieren musst du folgende Schritte befolgen:
+Um die LEDs beim Raspberry Pi 3b zu deaktivieren, musst du folgende Schritte befolgen:
 
-    1. Öffne die config.txt
-        ```
-        sudo nano /boot/firmware/config.txt
-       ```
+1. Öffne die config.txt
+    ```
+    sudo nano /boot/firmware/config.txt
+    ```
 
-    2. Ergänze ganz unten folgenden Abschnitt
-        ```
-        # Turn off Power LED
-        dtparam=pwr_led_trigger=default-on
-        dtparam=pwr_led_activelow=off
-        # Turn off Activity LED
-        dtparam=act_led_trigger=none
-        dtparam=act_led_activelow=off
-        # Turn off Ethernet ACT LED
-        dtparam=eth_led0=14
-        # Turn off Ethernet LNK LED
-        dtparam=eth_led1=14
-        YAML
-       ```
+2. Ergänze ganz unten folgenden Abschnitt
+    ```
+    # Power-LED ausschalten
+    dtparam=pwr_led_trigger=default-on
+    dtparam=pwr_led_activelow=off
+    # Aktivitäts-LED ausschalten
+    dtparam=act_led_trigger=none
+    dtparam=act_led_activelow=off
+    # Ethernet-ACT-LED ausschalten
+    dtparam=eth_led0=14
+    # Ethernet-LNK-LED ausschalten
+    dtparam=eth_led1=14
+    ```
 
-
-    3. Abspeichern und Neustarten
+3. Speichern und Neustarten.
