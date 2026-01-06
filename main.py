@@ -1,3 +1,5 @@
+import sys, pathlib
+sys.path.append(str(pathlib.Path(__file__).resolve().parent / "lib"))
 import json
 import time
 import requests
