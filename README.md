@@ -34,9 +34,10 @@
 3. Installiere Abhängigkeiten
     ```
     sudo apt update
-    sudo apt-get install python3-pip python3-numpy git
-    pip3 install RPi.GPIO spidev pillow
+    sudo apt-get install python3-pip python3-numpy python3-systemd git
+    pip3 install RPi.GPIO spidev pillow requests
     ```
+    `python3-systemd` wird nur benötigt, wenn der Watchdog (`Type=notify` + `WatchdogSec`) im systemd-Service genutzt wird. Fehlt das Paket, läuft das Programm trotzdem, dann aber ohne Watchdog-Heartbeat.
 
 4. Installiere Treiber für dein Display (du musst nicht beide installieren)
     1. Wenn du ein Waveshare-Display hast
@@ -127,15 +128,18 @@ Um das Programm beim Hochfahren automatisch zu starten, hast du folgende Option:
         [Unit]
         Description=zero-btc-screen
         After=network.target
- 
+
         [Service]
+        Type=notify
         ExecStart=/usr/bin/python3 -u main.py
         WorkingDirectory=/home/pi/zero-btc-screen
         StandardOutput=inherit
         StandardError=inherit
         Restart=always
+        RestartSec=10
+        WatchdogSec=120
         User=pi
- 
+
         [Install]
         WantedBy=multi-user.target
         ```

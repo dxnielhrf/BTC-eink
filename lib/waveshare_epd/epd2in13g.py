@@ -29,11 +29,14 @@
 #
 
 import logging
+import time
 from . import epdconfig
 
 import PIL
 from PIL import Image
 import io
+
+BUSY_TIMEOUT_S = 30
 
 # Display resolution
 EPD_WIDTH       = 122
@@ -84,10 +87,14 @@ class EPD:
     def ReadBusy(self):
         logger.debug("e-Paper busy H")
         epdconfig.delay_ms(100)
-        while(epdconfig.digital_read(self.busy_pin) == 0):      # 0: idle, 1: busy
+        start = time.monotonic()
+        while epdconfig.digital_read(self.busy_pin) == 0:
+            if time.monotonic() - start > BUSY_TIMEOUT_S:
+                logger.warning("e-Paper BUSY timeout after %ds — aborting wait", BUSY_TIMEOUT_S)
+                return
             epdconfig.delay_ms(5)
         logger.debug("e-Paper busy release")
-        
+
     def SetWindow(self):
         self.send_command(0x61) # SET_RAM_X_ADDRESS_START_END_POSITION
         # x point must be the multiple of 8 or the last 3 bits will be ignored
