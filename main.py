@@ -1,6 +1,7 @@
 import sys, pathlib
 sys.path.append(str(pathlib.Path(__file__).resolve().parent / "lib"))
 import json
+import threading
 import time
 import requests
 import urllib.parse
@@ -16,6 +17,8 @@ DATETIME_FORMAT = "%Y-%m-%dT%H:%M"
 REQUEST_TIMEOUT = 15
 BACKOFF_MIN = 5
 BACKOFF_MAX = 300
+HEARTBEAT_INTERVAL_S = 30
+STUCK_THRESHOLD_S = max(config.refresh_interval * 2 + 300, 1800)
 
 try:
     import systemd.daemon as _sd
@@ -30,6 +33,33 @@ def _sd_notify(msg):
             _sd.notify(msg)
         except Exception:
             pass
+
+
+_last_alive = time.monotonic()
+_alive_lock = threading.Lock()
+
+
+def mark_alive():
+    global _last_alive
+    with _alive_lock:
+        _last_alive = time.monotonic()
+
+
+def _seconds_since_alive():
+    with _alive_lock:
+        return time.monotonic() - _last_alive
+
+
+def _heartbeat_loop(stop_event):
+    while not stop_event.wait(HEARTBEAT_INTERVAL_S):
+        stale = _seconds_since_alive()
+        if stale > STUCK_THRESHOLD_S:
+            logger.error(
+                "Heartbeat: main loop stale for %.0fs (> %ds), stopping watchdog pings",
+                stale, STUCK_THRESHOLD_S,
+            )
+            return
+        _sd_notify('WATCHDOG=1')
 
 
 def get_dummy_data():
@@ -54,6 +84,16 @@ def fetch_prices():
     return prices
 
 
+def _interruptible_sleep(total_s, stop_event, step=5):
+    end = time.monotonic() + total_s
+    while True:
+        remaining = end - time.monotonic()
+        if remaining <= 0:
+            return
+        if stop_event.wait(min(step, remaining)):
+            return
+
+
 def main():
     logger.info('Initialize')
 
@@ -61,7 +101,13 @@ def main():
     builder = Builder(config)
     builder.bind(data_sink)
 
+    mark_alive()
     _sd_notify('READY=1')
+
+    stop_event = threading.Event()
+    heartbeat = threading.Thread(target=_heartbeat_loop, args=(stop_event,), daemon=True)
+    heartbeat.start()
+
     backoff = BACKOFF_MIN
 
     try:
@@ -69,22 +115,29 @@ def main():
             try:
                 prices = [entry[1:] for entry in get_dummy_data()] if config.dummy_data else fetch_prices()
                 data_sink.update_observers(prices)
-                _sd_notify('WATCHDOG=1')
+                mark_alive()
                 backoff = BACKOFF_MIN
-                time.sleep(config.refresh_interval)
+                _interruptible_sleep(config.refresh_interval, stop_event)
             except (requests.exceptions.RequestException,
                     json.JSONDecodeError,
                     ValueError) as e:
                 logger.error(f"Fetch failed, retrying in {backoff}s: {e}")
-                time.sleep(backoff)
+                mark_alive()
+                _interruptible_sleep(backoff, stop_event)
                 backoff = min(backoff * 2, BACKOFF_MAX)
             except Exception as e:
                 logger.exception(f"Unexpected error in refresh loop: {e}")
-                time.sleep(backoff)
+                mark_alive()
+                _interruptible_sleep(backoff, stop_event)
                 backoff = min(backoff * 2, BACKOFF_MAX)
     except KeyboardInterrupt:
         logger.info('Exit')
-        data_sink.close()
+    finally:
+        stop_event.set()
+        try:
+            data_sink.close()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
