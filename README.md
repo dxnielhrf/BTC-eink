@@ -135,19 +135,20 @@ mode : candle
 
 Um das Programm beim Hochfahren automatisch zu starten, hast du folgende Option:
 
-1. Verwendung des Systemd-Service-Daemons
-    0. Stelle sicher, dass Repo und Dependencies aktuell sind
-       ```
-        cd ~/zero-btc-screen
-        git pull origin main
-        sudo apt-get update && sudo apt-get install -y python3-systemd
-        pip3 install requests
-       ```
-    1. Erstelle eine neue Service-Konfigurationsdatei
-       ```
-        sudo nano /etc/systemd/system/btc-screen.service
-        ```
-    2. Kopiere und füge Folgendes in die Service-Konfigurationsdatei ein und passe die Einstellungen an deine Umgebung an
+1. Stelle sicher, dass Repo und Dependencies aktuell sind
+    ```bash
+    cd ~/zero-btc-screen
+    git pull origin main
+    sudo apt-get update && sudo apt-get install -y python3-systemd
+    pip3 install requests
+    ```
+
+2. Erstelle eine neue Service-Konfigurationsdatei
+    ```bash
+    sudo nano /etc/systemd/system/btc-screen.service
+    ```
+
+3. Kopiere und füge Folgendes in die Service-Konfigurationsdatei ein und passe die Einstellungen an deine Umgebung an
        ```
         [Unit]
         Description=zero-btc-screen
@@ -171,20 +172,20 @@ Um das Programm beim Hochfahren automatisch zu starten, hast du folgende Option:
        **Hinweis zu `Type=notify` und `WatchdogSec`:**
        Das Programm sendet `READY=1` beim Start und danach alle 30 Sekunden einen `WATCHDOG=1`-Heartbeat über einen Hintergrund-Thread — unabhängig vom Display-Refresh-Intervall. `WatchdogSec=90` bedeutet: systemd killt + restartet automatisch, wenn 3 aufeinanderfolgende Pings ausbleiben (also ~90s Hänger). Fehlt `python3-systemd`, läuft das Programm trotzdem — nur ohne Watchdog.
 
-    3. Aktiviere den Service, damit er beim Neustart des RPi automatisch startet
-       ```
-        sudo systemctl enable btc-screen.service
-       ```
-    4. Starte den Service und viel Spaß!
-       ```
-        sudo systemctl start btc-screen.service
-       ```
+4. Aktiviere den Service, damit er beim Neustart des RPi automatisch startet
+    ```bash
+    sudo systemctl enable btc-screen.service
+    ```
 
-       Falls du Probleme beheben musst, kannst du die Logging-Konfigurationen dieses Programms verwenden (siehe unten).
-       Alternativ kannst du die Systemd-Service-Logs überprüfen.
-       ```
-        sudo journalctl -f -u btc-screen.service
-       ```
+5. Starte den Service
+    ```bash
+    sudo systemctl start btc-screen.service
+    ```
+
+    Logs live verfolgen:
+    ```bash
+    sudo journalctl -f -u btc-screen.service
+    ```
 
        **Troubleshooting systemd/Watchdog:**
        - Service startet nicht mit `Type=notify` → `python3 -c "import systemd.daemon"` testen. Fehler = Paket fehlt. Fix: `sudo apt-get install python3-systemd` oder `Type=notify` → `Type=simple` + `WatchdogSec` entfernen.
