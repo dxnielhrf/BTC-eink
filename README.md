@@ -137,12 +137,16 @@ Um das Programm beim Hochfahren automatisch zu starten, hast du folgende Option:
         StandardError=inherit
         Restart=always
         RestartSec=10
-        WatchdogSec=120
+        WatchdogSec=90
         User=pi
 
         [Install]
         WantedBy=multi-user.target
         ```
+
+       **Hinweis zu `Type=notify` und `WatchdogSec`:**
+       Das Programm sendet `READY=1` beim Start und danach alle 30 Sekunden einen `WATCHDOG=1`-Heartbeat über einen Hintergrund-Thread — unabhängig vom Display-Refresh-Intervall. `WatchdogSec=90` bedeutet: systemd killt + restartet automatisch, wenn 3 aufeinanderfolgende Pings ausbleiben (also ~90s Hänger). Fehlt `python3-systemd`, läuft das Programm trotzdem — nur ohne Watchdog.
+
     3. Aktiviere den Service, damit er beim Neustart des RPi automatisch startet
        ```
         sudo systemctl enable btc-screen.service
@@ -157,6 +161,11 @@ Um das Programm beim Hochfahren automatisch zu starten, hast du folgende Option:
        ```
         sudo journalctl -f -u btc-screen.service
        ```
+
+       **Troubleshooting systemd/Watchdog:**
+       - Service startet nicht mit `Type=notify` → `python3 -c "import systemd.daemon"` testen. Fehler = Paket fehlt. Fix: `sudo apt-get install python3-systemd` oder `Type=notify` → `Type=simple` + `WatchdogSec` entfernen.
+       - Bei WLAN-Ausfall: Programm loggt `Fetch failed, retrying in Xs` mit exponentiellem Backoff (5s → 10s → ... → 5min). Kein Absturz, kein Kill durch systemd.
+       - Display hängt im Busy-State: Treiber bricht nach 30s ab mit Warning in den Logs, Refresh-Loop läuft weiter.
 
 ### LEDs
 
