@@ -119,6 +119,13 @@ mode : candle
 Um das Programm beim Hochfahren automatisch zu starten, hast du folgende Option:
 
 1. Verwendung des Systemd-Service-Daemons
+    0. Stelle sicher, dass Repo und Dependencies aktuell sind
+       ```
+        cd ~/zero-btc-screen
+        git pull origin main
+        sudo apt-get update && sudo apt-get install -y python3-systemd
+        pip3 install requests
+       ```
     1. Erstelle eine neue Service-Konfigurationsdatei
        ```
         sudo nano /etc/systemd/system/btc-screen.service
