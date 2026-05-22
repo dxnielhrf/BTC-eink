@@ -2,22 +2,29 @@
 
 ### Plattform
 
-* Raspberry Pi Zero W
-* Raspberry Pi 3b+
-* Raspberry Pi 4
-* Jeder andere moderne RPi
+| Modell | Getestet | Hinweis |
+|---|---|---|
+| Raspberry Pi Zero 2 W | ✓ | Empfohlen für Dauerbetrieb — kompakt, stromsparend |
+| Raspberry Pi Zero W | ✓ | Funktioniert, langsamer bei PIL-Konvertierung |
+| Raspberry Pi 3B+ | ✓ | |
+| Raspberry Pi 4 | ✓ | |
+| Raspberry Pi 5 | — | Sollte funktionieren, nicht explizit getestet |
+
+Benötigt: SPI-fähiger Pi mit Raspbian/Raspberry Pi OS (Bookworm empfohlen).
 
 ### Unterstützte Displays
 
-* Waveshare eInk Typen:
-  * epd2in13v2
-  * epd2in13g
-  * epd2in13v3
-  * epd2in13bv3
-  * epd2in7
-  * epd3in7
-* inkyWhat (Rot, Schwarz, Weiß)
-* Virtuell (Bild)
+| Display | Typ | Farben | Treiber |
+|---|---|---|---|
+| Waveshare epd2in13g | 2,13" e-Paper | Schwarz, Weiß, Rot, Gelb (4-Farb-Spectra) | `epd2in13g` |
+| Waveshare epd2in13g V2 | 2,13" e-Paper | Schwarz, Weiß, Rot, Gelb (4-Farb-Spectra) | `epd2in13gv2` |
+| Waveshare epd2in13v2 | 2,13" e-Paper | Schwarz, Weiß | `epd2in13v2` |
+| Waveshare epd2in13v3 | 2,13" e-Paper | Schwarz, Weiß | `epd2in13v3` |
+| Waveshare epd2in13bv3 | 2,13" e-Paper | Schwarz, Weiß, Rot | `epd2in13bv3` |
+| Waveshare epd2in7 | 2,7" e-Paper | Schwarz, Weiß | `epd2in7` |
+| Waveshare epd3in7 | 3,7" e-Paper | Schwarz, Weiß (4 Graustufen) | `epd3in7` |
+| Pimoroni inkyWhat | 4,2" e-Paper | Schwarz, Weiß, Rot | `inkyWhatRBW` |
+| Virtuell (Bild) | PNG-Ausgabe | — | `picture` |
 
 ## Installation
 
@@ -58,25 +65,24 @@
     python3 ~/zero-btc-screen/main.py
     ```
 
-## Bildschirmkonfiguration
+## Konfiguration
 
-Die Anwendung unterstützt mehrere Arten von e-Ink-Bildschirmen und einen zusätzlichen "Bild"-Bildschirm.
-
-Die Displays können in der configuration.cfg angepasst werden.
+Alle Einstellungen in `configuration.cfg` im Repo-Verzeichnis:
 
 ```cfg
 [base]
 console_logs             : false
 #logs_file                : /tmp/zero-btc-screen.log
 dummy_data               : false
-refresh_interval_minutes : 15
+refresh_interval_minutes : 30
 # Preis-Paar von Coinbase z.B. BTC-EUR oder ADA-GBP
 currency                 : BTC-USD
 
-# Aktivierte Bildschirme oder Geräte
+# Aktiviertes Display — nur eines gleichzeitig einkommentieren
 screens : [
 #    epd2in13v2
-    epd2in13g
+#    epd2in13g
+    epd2in13gv2
 #    epd2in13v3
 #    epd2in13bv3
 #    epd2in7
@@ -85,13 +91,14 @@ screens : [
 #    inkyWhatRBW
   ]
 
-# Konfiguration pro Bildschirm
-# Dies hat keine Auswirkungen, wenn die Bildschirme oben nicht aktiviert sind
+# Darstellungsmodus pro Display: "candle" (Kerzendiagramm) oder "line" (Linienchart)
+[epd2in13gv2]
+mode : candle
+
 [epd2in13g]
 mode : candle
 
 [epd2in13v2]
-#mode : line
 mode : candle
 
 [epd2in13v3]
@@ -113,6 +120,16 @@ mode : candle
 [inkyWhatRBW]
 mode : candle
 ```
+
+**Wichtige Parameter:**
+
+| Parameter | Standard | Beschreibung |
+|---|---|---|
+| `refresh_interval_minutes` | 30 | Wie oft das Display aktualisiert wird |
+| `currency` | BTC-USD | Coinbase-Handelspaar (z.B. `BTC-EUR`, `ETH-USD`) |
+| `dummy_data` | false | `true` = keine echten API-Calls, für Tests |
+| `console_logs` | false | `true` = Logs auch in der Konsole ausgeben |
+| `mode` | candle | `candle` = Kerzendiagramm, `line` = Linienchart |
 
 ### Autostart
 
@@ -173,31 +190,6 @@ Um das Programm beim Hochfahren automatisch zu starten, hast du folgende Option:
        - Service startet nicht mit `Type=notify` → `python3 -c "import systemd.daemon"` testen. Fehler = Paket fehlt. Fix: `sudo apt-get install python3-systemd` oder `Type=notify` → `Type=simple` + `WatchdogSec` entfernen.
        - Bei WLAN-Ausfall: Programm loggt `Fetch failed, retrying in Xs` mit exponentiellem Backoff (5s → 10s → ... → 5min). Kein Absturz, kein Kill durch systemd.
        - Display hängt im Busy-State: Treiber bricht nach 30s ab mit Warning in den Logs, Refresh-Loop läuft weiter.
-
-### LEDs
-
-Um die LEDs beim Raspberry Pi 3b zu deaktivieren, musst du folgende Schritte befolgen:
-
-1. Öffne die config.txt
-    ```
-    sudo nano /boot/firmware/config.txt
-    ```
-
-2. Ergänze ganz unten folgenden Abschnitt
-    ```
-    # Power-LED ausschalten
-    dtparam=pwr_led_trigger=default-on
-    dtparam=pwr_led_activelow=off
-    # Aktivitäts-LED ausschalten
-    dtparam=act_led_trigger=none
-    dtparam=act_led_activelow=off
-    # Ethernet-ACT-LED ausschalten
-    dtparam=eth_led0=14
-    # Ethernet-LNK-LED ausschalten
-    dtparam=eth_led1=14
-    ```
-
-3. Speichern und Neustarten.
 
 ### Powersave (Headless Pi Zero 2 W)
 
