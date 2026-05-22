@@ -199,4 +199,82 @@ Um die LEDs beim Raspberry Pi 3b zu deaktivieren, musst du folgende Schritte bef
 
 3. Speichern und Neustarten.
 
+### Powersave (Headless Pi Zero 2 W)
 
+Für Dauerbetrieb ohne Monitor. Alle Punkte beeinflussen das Display-Bild **nicht**.
+
+**1. HDMI dauerhaft ausschalten**
+
+```bash
+sudo nano /etc/systemd/system/hdmi-off.service
+```
+```ini
+[Unit]
+Description=Turn off HDMI output to save power
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/vcgencmd display_power 0
+RemainAfterExit=yes
+ExecStop=/usr/bin/vcgencmd display_power 1
+
+[Install]
+WantedBy=multi-user.target
+```
+```bash
+sudo systemctl enable --now hdmi-off.service
+```
+Ersparnis: ~25–30 mA.
+
+**2. Bluetooth ausschalten**
+
+```bash
+echo "dtoverlay=disable-bt" | sudo tee -a /boot/firmware/config.txt
+sudo systemctl disable hciuart bluetooth
+```
+Ersparnis: ~30 mA.
+
+**3. WLAN Powersave**
+
+```bash
+sudo mkdir -p /etc/NetworkManager/conf.d
+echo -e "[connection]\nwifi.powersave = 3" | sudo tee /etc/NetworkManager/conf.d/wifi-powersave.conf
+sudo systemctl restart NetworkManager
+```
+Verify: `iw dev wlan0 get power_save` → `Power save: on`. Ersparnis: ~10–30 mA.
+
+**4. ACT-LED ausschalten (Pi Zero 2 W)**
+
+In `/boot/firmware/config.txt` am Ende ergänzen:
+```
+dtparam=act_led_trigger=none
+dtparam=act_led_activelow=off
+```
+Ersparnis: ~5 mA.
+
+**5. Was nicht empfohlen wird**
+
+- `cpufreq-set -g powersave`: Pi Zero 2 W braucht Rechenleistung für PIL/Image-Convert beim Refresh. `ondemand` (Standard) ist optimal.
+- `epd.sleep()` pro Refresh: Unterbricht Waveform-Settle-Phase → Schwarz wird Grau auf 4-Farb-Spectra-Panels. Nur `close()` ruft `sleep()` auf.
+
+**Gesamtersparnis Pi Zero 2 W**
+
+| Maßnahme | Ersparnis |
+|---|---|
+| HDMI aus | ~25 mA |
+| Bluetooth aus | ~30 mA |
+| WLAN Powersave | ~15 mA |
+| LED aus | ~5 mA |
+| **Gesamt** | **~75 mA** (~0.38 W statt ~0.75 W) |
+
+Nach allen Änderungen neu starten:
+```bash
+sudo reboot
+```
+Verify:
+```bash
+vcgencmd display_power          # → display_power=0
+iw dev wlan0 get power_save     # → Power save: on
+sudo systemctl status hdmi-off btc-screen
+```
