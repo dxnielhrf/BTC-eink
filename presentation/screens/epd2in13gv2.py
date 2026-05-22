@@ -30,7 +30,6 @@ class Epd2in13gv2(Observer):
         epd = epd2in13g_V2.EPD()
         epd.init()
         epd.Clear()
-        epd.sleep()
         return epd
 
     def form_image(self, prices):
@@ -73,14 +72,7 @@ class Epd2in13gv2(Observer):
 
     def update(self, data):
         self.form_image(data)
-        try:
-            self.epd.init()
-            self.epd.display(self.epd.getbuffer(self.screen_image))
-        finally:
-            try:
-                self.epd.sleep()
-            except Exception:
-                pass
+        self.epd.display(self.epd.getbuffer(self.screen_image))
 
     def close(self):
         try:
