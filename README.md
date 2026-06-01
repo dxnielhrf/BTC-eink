@@ -241,8 +241,11 @@ Verify: `iw dev wlan0 get power_save` → `Power save: on`. Ersparnis: ~10–30 
 
 In `/boot/firmware/config.txt` am Ende ergänzen:
 ```
+dtparam=act_led_activelow=on
 dtparam=act_led_trigger=none
-dtparam=act_led_activelow=off
+
+dtparam=pwr_led_activelow=on
+dtparam=pwr_led_trigger=none
 ```
 Ersparnis: ~5 mA.
 
